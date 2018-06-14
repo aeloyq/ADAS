@@ -1,0 +1,9 @@
+background
+open_eyes
+close_eyes
+phone
+smoke
+yawn
+hand
+side_face
+face
