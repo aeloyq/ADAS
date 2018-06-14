@@ -130,7 +130,7 @@ def get_variables_available_in_checkpoint(variables,
   vars_in_ckpt = {}
   for variable_name, variable in sorted(variable_names_map.items()):
     if variable_name in ckpt_vars_to_shape_map:
-      if ckpt_vars_to_shape_map[ variable_name]== variable.shape.as_list():
+      if ckpt_vars_to_shape_map[variable_name] == variable.shape.as_list():
         vars_in_ckpt[variable_name] = variable
       else:
         logging.warning('Variable [%s] is available in checkpoint, but has an '

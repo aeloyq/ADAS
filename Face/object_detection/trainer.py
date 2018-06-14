@@ -235,6 +235,9 @@ def train(create_tensor_dict_fn,
       built (before optimization). This is helpful to perform additional changes
       to the training graph such as adding FakeQuant ops. The function should
       modify the default graph.
+
+  Raises:
+    ValueError: If both num_clones > 1 and train_config.sync_replicas is true.
   """
 
   detection_model = create_model_fn()
@@ -256,9 +259,16 @@ def train(create_tensor_dict_fn,
     with tf.device(deploy_config.variables_device()):
       global_step = slim.create_global_step()
 
+    if num_clones != 1 and train_config.sync_replicas:
+      raise ValueError('In Synchronous SGD mode num_clones must ',
+                       'be 1. Found num_clones: {}'.format(num_clones))
+    batch_size = train_config.batch_size // num_clones
+    if train_config.sync_replicas:
+      batch_size //= train_config.replicas_to_aggregate
+
     with tf.device(deploy_config.inputs_device()):
       input_queue = create_input_queue(
-          train_config.batch_size // num_clones, create_tensor_dict_fn,
+          batch_size, create_tensor_dict_fn,
           train_config.batch_queue_capacity,
           train_config.num_batch_queue_threads,
           train_config.prefetch_queue_capacity, data_augmentation_options)
@@ -354,7 +364,6 @@ def train(create_tensor_dict_fn,
     # Soft placement allows placing on CPU ops without GPU implementation.
     session_config = tf.ConfigProto(allow_soft_placement=True,
                                     log_device_placement=False)
-    # session_config.gpu_options.allow_growth=True
 
     # Save checkpoints regularly.
     keep_checkpoint_every_n_hours = train_config.keep_checkpoint_every_n_hours
@@ -377,8 +386,7 @@ def train(create_tensor_dict_fn,
           load_all_detection_checkpoint_vars=(
               train_config.load_all_detection_checkpoint_vars),
           load_all_optimizer_checkpoint_vars=(
-              train_config.load_all_optimizer_checkpoint_vars)
-      )
+              train_config.load_all_optimizer_checkpoint_vars))
       available_var_map = (variables_helper.
                            get_variables_available_in_checkpoint(
                                var_map, train_config.fine_tune_checkpoint))

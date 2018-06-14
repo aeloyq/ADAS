@@ -67,7 +67,7 @@ flags.DEFINE_boolean('clone_on_cpu', False,
                      'set to False (allowing ops to run on gpu), some ops may '
                      'still be run on the CPU if they have no GPU kernel.')
 flags.DEFINE_integer('worker_replicas', 1, 'Number of worker+trainer '
-                                           'replicas.')
+                     'replicas.')
 flags.DEFINE_integer('ps_tasks', 0,
                      'Number of parameter server tasks. If None, does not use '
                      'a parameter server.')
@@ -93,16 +93,16 @@ def main(_):
   if FLAGS.task == 0: tf.gfile.MakeDirs(FLAGS.train_dir)
   if FLAGS.pipeline_config_path:
     configs = config_util.get_configs_from_pipeline_file(
-      FLAGS.pipeline_config_path)
+        FLAGS.pipeline_config_path)
     if FLAGS.task == 0:
       tf.gfile.Copy(FLAGS.pipeline_config_path,
                     os.path.join(FLAGS.train_dir, 'pipeline.config'),
                     overwrite=True)
   else:
     configs = config_util.get_configs_from_multiple_files(
-      model_config_path=FLAGS.model_config_path,
-      train_config_path=FLAGS.train_config_path,
-      train_input_config_path=FLAGS.input_config_path)
+        model_config_path=FLAGS.model_config_path,
+        train_config_path=FLAGS.train_config_path,
+        train_input_config_path=FLAGS.input_config_path)
     if FLAGS.task == 0:
       for name, config in [('model.config', FLAGS.model_config_path),
                            ('train.config', FLAGS.train_config_path),
@@ -115,13 +115,13 @@ def main(_):
   input_config = configs['train_input_config']
 
   model_fn = functools.partial(
-    model_builder.build,
-    model_config=model_config,
-    is_training=True)
+      model_builder.build,
+      model_config=model_config,
+      is_training=True)
 
   def get_next(config):
     return dataset_util.make_initializable_iterator(
-      dataset_builder.build(config)).get_next()
+        dataset_builder.build(config)).get_next()
 
   create_input_dict_fn = functools.partial(get_next, input_config)
 
@@ -165,22 +165,22 @@ def main(_):
   graph_rewriter_fn = None
   if 'graph_rewriter_config' in configs:
     graph_rewriter_fn = graph_rewriter_builder.build(
-      configs['graph_rewriter_config'], is_training=True)
+        configs['graph_rewriter_config'], is_training=True)
 
   trainer.train(
-    create_input_dict_fn,
-    model_fn,
-    train_config,
-    master,
-    task,
-    FLAGS.num_clones,
-    worker_replicas,
-    FLAGS.clone_on_cpu,
-    ps_tasks,
-    worker_job_name,
-    is_chief,
-    FLAGS.train_dir,
-    graph_hook_fn=graph_rewriter_fn)
+      create_input_dict_fn,
+      model_fn,
+      train_config,
+      master,
+      task,
+      FLAGS.num_clones,
+      worker_replicas,
+      FLAGS.clone_on_cpu,
+      ps_tasks,
+      worker_job_name,
+      is_chief,
+      FLAGS.train_dir,
+      graph_hook_fn=graph_rewriter_fn)
 
 
 if __name__ == '__main__':
